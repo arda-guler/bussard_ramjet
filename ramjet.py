@@ -48,13 +48,12 @@ scoop_area = math.pi * 15000**2 # circle with 15km radius
 reactor = proton_proton_chain()
 
 # A web search says this number can go up to 100 million K, and
-# fusion requires 15 million K, so I'll go with a somewhat
-# conservative 30 million K
-reactor_temp = 30000000 # K
+# fusion requires 15 million K
+reactor_temp = 30 # K
 
 # this is completely arbitrary
-reactor_efficiency = 0.4
-energy_conversion_efficiency = 0.02
+reactor_efficiency = 0.2
+energy_conversion_efficiency = 0.05
 reactor_max_power = 500000 # Watt
 max_exhaust_vel = 5000000 # m/s
 
@@ -78,8 +77,7 @@ while True:
     pp_intake_rate += (medium_density * ISM_hydrogen_ratio * hydrogen_atomic_ratio
                       * scoop_area * vel) # particles/s
 
-    # H2 intake rate is divided by 2 here because we need 2 hydrogen to initiate a single fusion process
-    reactor_energy_output = reactor.get_energy_output(reactor_temp) * pp_intake_rate * reactor_efficiency # J/s
+    reactor_energy_output = reactor.get_energy_output(reactor_temp) * (pp_intake_rate/10 + math.sqrt(pp_intake_rate)) * reactor_efficiency # J/s
 
     # clamp energy output by max power
     reactor_energy_output = min(reactor_energy_output, reactor_max_power)
@@ -91,6 +89,8 @@ while True:
         sum_exhaust_mass += material.get_molecular_mass()
         
     avg_exhaust_mass_rate = ((sum_exhaust_mass * reactor_material_output[1]) / len(reactor_material_output[0])) * (pp_intake_rate)
+
+    reactor_temp = reactor_energy_output * (1-energy_conversion_efficiency) / (pp_intake_rate * H2.get_molecular_mass() * 14304)
 
     # relativity ignored
     avg_exhaust_vel = math.sqrt(2*reactor_energy_output/avg_exhaust_mass_rate) * energy_conversion_efficiency # m/s
@@ -118,6 +118,7 @@ while True:
     print("Drag: %.15f N" % drag)
     print("P-P Intake Rate: %.10f s-1" % pp_intake_rate)
     print("Reactor Energy Output: %.10f J" % reactor_energy_output)
+    print("Reactor Temp: %.1f K" % reactor_temp)
     print("Mass Flow: %.20f kg/s" % avg_exhaust_mass_rate)
     print("Exhaust Vel: %.5f m/s" % avg_exhaust_vel)
 
